@@ -10,6 +10,11 @@ export class FacebookConstantsService {
         this.requestInfos = this.getRequestInfos();
     }
 
+    private isValidDate(dateString: string): boolean {
+        const date = new Date(dateString);
+        return date instanceof Date && !isNaN(date.getTime());
+    }
+
     private getRequestInfos(): any {
         const token = this.request?.headers?.['access-token'] as string;
         const { accountId, date_start, date_end, breakdown } = this.request?.body;
@@ -22,12 +27,15 @@ export class FacebookConstantsService {
             throw new HttpException('Account ID is required', HttpStatus.BAD_REQUEST);
         }
 
-        if (!date_start) {
-            throw new HttpException('Date start is required', HttpStatus.BAD_REQUEST);
+        if (!date_start || !this.isValidDate(date_start)) {
+            throw new HttpException('Date start is required and must be a valid date', HttpStatus.BAD_REQUEST);
         }
 
-        if (!date_end) {
-            throw new HttpException('Date end is required', HttpStatus.BAD_REQUEST);
+        let finalDateEnd = date_end;
+        if (!date_end || !this.isValidDate(date_end)) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            finalDateEnd = yesterday.toISOString().split('T')[0];
         }
 
         if (!breakdown) {
@@ -38,7 +46,7 @@ export class FacebookConstantsService {
             token,
             accountId,
             date_start,
-            date_end,
+            date_end: finalDateEnd,
             breakdown,
             baseUrl: 'https://graph.facebook.com/v22.0'
         };

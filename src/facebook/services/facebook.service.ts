@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DateService } from '../../common/date.service';
 import { FacebookBatchRequestsService } from './facebook-batch-requests.service';
 import { FacebookConstantsService } from './facebook-constants.service';
 import { FacebookCreativeService } from './facebook-creative.service';
@@ -10,26 +9,16 @@ export class FacebookService {
     private commonParams?: any;
 
     constructor(
-        private readonly dateService: DateService,
         private readonly facebookBatchRequestsService: FacebookBatchRequestsService,
         private readonly facebookConstantsService: FacebookConstantsService,
         private readonly facebookCreativeService: FacebookCreativeService
     ) {}
 
-    private async getAccountData(): Promise<any> {
-        const accountId = this.facebookConstantsService.getInfo('accountId');
-        const params = { fields: 'name,timezone_offset_hours_utc' }
-        const queue = [ this.facebookBatchRequestsService.buildRelativeUrl(accountId, params) ]
-        const accountData = await this.facebookBatchRequestsService.getDataInBatch('GET', queue);
-        return accountData[0];
-    }
-
     async getCommonParams(): Promise<any> {
         if (!this.commonParams) {
-            const accountData = await this.getAccountData();
             const dateStart = this.facebookConstantsService.getInfo('date_start');
             const dateEnd = this.facebookConstantsService.getInfo('date_end');
-            const [ since, until ] = this.dateService.setupDates(dateStart, dateEnd, accountData.timezone_offset_hours_utc);
+            const [ since, until ] = [dateStart, dateEnd];
             const timeRange = JSON.stringify({ since, until });
             this.commonParams = { 'limit': 200, 'time_range': timeRange };
         }
